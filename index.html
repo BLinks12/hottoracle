@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>httpp:// - HOTT Oracle Demo</title>
+  <style>
+    /* ---------- Global Styles ---------- */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      background-color: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 32px;
+      height: 100dvh;
+    }
+    h1, h2, h3 {
+      margin: 8px 0;
+      text-align: center;
+    }
+
+    /* ---------- Container ---------- */
+    #main-container {
+      display: flex;
+      flex-direction: row;
+      gap: 16px;
+      width: 100%;
+      max-width: 1200px;
+    }
+
+    /* ---------- Sidebar Styles ---------- */
+    #sidebar {
+      background-color: #111;
+      border: 1px solid #555;
+      border-radius: 8px;
+      padding: 16px;
+      width: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      height: fit-content;
+    }
+
+    #sidebar h2 {
+      margin-bottom: 4px;
+    }
+    #sidebar button {
+      background: #52e152;
+      border: none;
+      color: #000;
+      font-size: 1em;
+      padding: 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    #sidebar button:hover {
+      background-color: #41c141;
+    }
+
+    /* ---------- Main Content Styles ---------- */
+    #main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ---------- Log Styles ---------- */
+    #log {
+      background: #222;
+      color: #0f0;
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 10px;
+      flex: 1;
+      font-family: monospace;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .info {
+      color: #0f0;
+    }
+    .warn {
+      color: #ff0;
+    }
+    .error {
+      color: #f00;
+    }
+    .success {
+      color: #0ff;
+    }
+
+    /* ---------- Form & Inputs ---------- */
+    label {
+      font-size: 0.9em;
+      margin-bottom: 4px;
+    }
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 8px;
+      background-color: #333;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 4px;
+    }
+    p {
+      margin: 4px 0;
+    }
+
+    /* ---------- Footer Info ---------- */
+    #footer-info {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 0.8em;
+    }
+    #footer-info a {
+      color: #52e152;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>HyperText Transfer Proof Protocol (httpp://)</h1>
+  <h2>HOTT - HTTPS Oracle Token Demo</h2>
+  <p>Simulated environment showing how HOTT tokens can be used for on-chain oracles verifying Web2 data.</p>
+
+  <div id="main-container">
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <h2>Node Operator</h2>
+      <label for="operatorStake">Stake HOTT:</label>
+      <input type="number" id="operatorStake" placeholder="e.g. 100" />
+
+      <button id="stakeButton">Become Operator</button>
+      <p id="operatorStatus"></p>
+
+      <hr style="border: 0; border-top: 1px solid #555;" />
+
+      <h2>User Request</h2>
+      <label for="web2Endpoint">Web2 Endpoint:</label>
+      <input type="text" id="web2Endpoint" placeholder="Enter an HTTPS URL" />
+      
+      <label for="oraclePayment">Payment in HOTT:</label>
+      <input type="number" id="oraclePayment" placeholder="e.g. 10" />
+
+      <button id="requestDataButton">Request Data</button>
+    </div>
+
+    <!-- Main Content: Log -->
+    <div id="main-content">
+      <div id="log">*** Oracle Log ***</div>
+    </div>
+  </div>
+
+  <div id="footer-info">
+    <p>
+      <strong>HTTPS Oracle Token (HOTT) Mechanics:</strong><br/>
+      - Users pay HOTT to request data verification from Web2 endpoints.<br/>
+      - Operators stake HOTT to provide proofs. Incorrect proofs lead to “slashing.”<br/>
+      - All activity is shown here as a <em>simulation</em> (no real blockchain).
+    </p>
+    <p>
+      Follow us on X: 
+      <a href="https://x.com/httpp_io" target="_blank">@httpp_io</a> 
+      for updates!
+    </p>
+  </div>
+
+  <script>
+    const stakeButton = document.getElementById("stakeButton");
+    const operatorStatus = document.getElementById("operatorStatus");
+    const requestDataButton = document.getElementById("requestDataButton");
+    const logDiv = document.getElementById("log");
+
+    let operatorStakeAmount = 0;
+    let isOperator = false;
+
+    // Fake data references to “slash” an operator if mismatch.
+    const fakeWeb2Data = {
+      "x.com": "Official X endpoint verified.",
+      "coinbase.com": "Coinbase server data: BTC price = $29,300",
+      "revolut.com": "Revolut server data: Balance ~ 250 USD",
+      "default": "Unknown data or custom endpoint."
+    };
+
+    /* ------------------------
+       STAKING AS AN OPERATOR
+    ------------------------ */
+    stakeButton.addEventListener("click", () => {
+      const stakeInput = document.getElementById("operatorStake");
+      const stakeValue = parseFloat(stakeInput.value);
+
+      if (!stakeValue || stakeValue <= 0) {
+        appendLog("error", "Operator stake must be > 0.");
+        return;
+      }
+      operatorStakeAmount = stakeValue;
+      isOperator = true;
+
+      operatorStatus.innerText = `✅ You are now an operator with ${operatorStakeAmount} HOTT staked.`;
+      appendLog("info", `Node Operator staked ${operatorStakeAmount} HOTT. Ready to serve requests.`);
+
+      stakeInput.value = "";
+    });
+
+    /* ------------------------
+       USER REQUEST DATA
+    ------------------------ */
+    requestDataButton.addEventListener("click", () => {
+      const endpointInput = document.getElementById("web2Endpoint");
+      const paymentInput = document.getElementById("oraclePayment");
+
+      const endpoint = endpointInput.value.trim().toLowerCase();
+      const payment = parseFloat(paymentInput.value);
+
+      // Basic validations
+      if (!endpoint) {
+        appendLog("error", "Please enter a Web2 endpoint (e.g., coinbase.com).");
+        return;
+      }
+      if (!payment || payment <= 0) {
+        appendLog("error", "You must pay some HOTT for the oracle request.");
+        return;
+      }
+      if (!isOperator) {
+        appendLog("error", "No active operator available. Please stake as operator first.");
+        return;
+      }
+
+      // Simulate request
+      appendLog("info", `User requests data from [${endpoint}] paying ${payment} HOTT...`);
+      endpointInput.value = "";
+      paymentInput.value = "";
+
+      // Simulate “Operator responds”
+      setTimeout(() => {
+        const operatorResponse = fetchFakeData(endpoint);
+        
+        // 10% chance operator tries to send “fake data,” leading to slash
+        if (Math.random() < 0.1) {
+          // Fake data mismatch
+          appendLog("warn", `Operator returned incorrect data for [${endpoint}]! Slashing...`);
+          slashOperator();
+        } else {
+          // Correct data
+          appendLog("success", `Operator returned valid proof:\n"${operatorResponse}"\nOracle paid ${payment} HOTT to operator.`);
+        }
+
+      }, 2000); // 2s fake network delay
+    });
+
+    /* ------------------------
+       FAKE WEB2 DATA FETCH
+    ------------------------ */
+    function fetchFakeData(endpoint) {
+      if (fakeWeb2Data[endpoint]) {
+        return fakeWeb2Data[endpoint];
+      } else {
+        return fakeWeb2Data["default"];
+      }
+    }
+
+    /* ------------------------
+       SLASHING OPERATOR
+    ------------------------ */
+    function slashOperator() {
+      let slashAmount = operatorStakeAmount * 0.25; // 25% slash
+      operatorStakeAmount -= slashAmount;
+      appendLog("error", `Operator is slashed by 25% stake = ${slashAmount} HOTT. Remaining stake: ${operatorStakeAmount.toFixed(2)}`);
+
+      if (operatorStakeAmount <= 0) {
+        appendLog("error", "Operator stake is now 0. Operator status lost.");
+        operatorStakeAmount = 0;
+        isOperator = false;
+        operatorStatus.innerText = "";
+      } else {
+        operatorStatus.innerText = `Warning! Slashed. Current stake: ${operatorStakeAmount.toFixed(2)} HOTT.`;
+      }
+    }
+
+    /* ------------------------
+       HELPER: LOG FUNCTION
+    ------------------------ */
+    function appendLog(type, message) {
+      const time = new Date().toLocaleTimeString();
+      logDiv.textContent += `[${time}] ${message}\n\n`;
+      logDiv.scrollTop = logDiv.scrollHeight;
+
+      // Optional: color code
+      // We already handle CSS classes if needed (info, warn, error, success)
+    }
+  </script>
+</body>
+</html>
